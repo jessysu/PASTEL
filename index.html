@@ -55,14 +55,78 @@
   <div class="container pt-5">
     <div class="col-12 text-center">
       <img class="img-fluid" src="./assets/img/SN_s0_collage_7x3.jpg"></img>
-      <div class="text-center h4">
+      <div class="text-center h4 pt-3">
 	    <span class="fw-bold">Fig. 1</span>
-	    <span class="ms-1">All Those Starry Nights</span>
+	    <span class="ms-1">All Those <a class="text-decoration-none" href="https://en.wikipedia.org/wiki/The_Starry_Night#/media/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg">Starry Night</a>s</span>
 	  </div>
     </div>
+    <h2>Overview</h2>
+    <p class="col-12">
+      All those <span class="fst-italic">Starry Night</span> variations are generated from the same seed and the same prompt, “Starry Night by Van Gogh.” PASTEL systematically explores the stylization space by progressively shifting emphasis between what the prompt describes and how the referenced objects are geometrically expressed. This process is analogous to the intentional distortions a human painter applies when translating an idea into paint to communicate with an audience. Through this controlled re-emphasis, PASTEL produces visually compelling stylizations that lie beyond what can be directly specified through prompting alone.
+    </p>	  
   </div>
 </div>
 </div>
+
+<div class="content">
+<div class="row py-3">
+  <div class="container pt-5 my-5">
+    <div class="col-12 text-center">
+      <img class="img-fluid" src="./assets/img/least_abs_attn2_w_attn1on_DMBM_s0.jpg"></img>
+      <div class="text-center h4 pt-3">
+	    <span class="fw-bold">Fig. 2</span>
+	    <span class="ms-1">“A desert made of broken mirrors reflecting an endless sunset”</span>
+	  </div>
+    </div>
+    <h2>Approach</h2>
+    <p class="col-12">
+      Within the diffusion framework, the PASTEL stylization space is defined by three components: a policy that determines emphasis selection, a preset specifying a subset of tunable attention blocks, and a set of rules governing the progression schedule. At each diffusion iteration, <span class="fst-italic">k</span> attention blocks are selected according to the policy and emphasized with a step size <span class="fst-italic">s</span>. In Fig. 2, tiles are arranged to reflect this progression: <span class="fst-italic">s</span> increases along the horizontal axis from left to right, while <span class="fst-italic">k</span> increases along the vertical axis from top to bottom.
+    </p>	  
+  </div>
+</div>
+</div>
+
+<div class="content">
+<div class="row py-3">
+  <div class="container pt-5 my-5">
+    <div class="d-md-flex justify-content-evenly">
+        <!-- Column 1 -->
+        <div class="col-12 col-md-4 col-lg-3 text-center">
+          <div class="position-relative d-inline-block">
+            <video class="img-fluid" src="./assets/mp4/CLS_s0_most_rel_down_pick3_step0.6_gaussian_crispy_channel_cut0.2_l3_r4_v30_i2.mp4" autoplay controls muted loop playsinline></video>
+            <img src="./assets/img/CLS_s0_iter40_original.jpg" class="position-absolute top-0 end-0 m-2" style="width: 72px; z-index: 5;">
+          </div>
+          <div class="text-center h4 pt-3"><a class="text-decoration-none" href="./assets/img/CLS_s0_iter40_original.jpg">“Coastal lighthouse during a storm”</a></div>
+        </div>
+        <!-- Column 2 -->
+        <div class="col-12 col-md-4 col-lg-3 text-center">
+          <div class="position-relative d-inline-block">
+            <video class="img-fluid" src="./assets/mp4/Kiss_s0_least_abs_down_pick1_step0.75_gaussian_crispy_channel_cut0.2_l5_r2_v30_i2.mp4" autoplay controls muted loop playsinline></video>
+            <img src="./assets/img/500px-Kiss.jpg" class="position-absolute top-0 end-0 m-2" style="width: 60px; z-index: 5;">
+          </div>
+          <div class="text-center h4 pt-3"><a class="text-decoration-none" href="https://en.wikipedia.org/wiki/The_Kiss_(Klimt)#/media/File:The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg">“The Kiss by Klimt”</a></div>
+        </div>
+        <!-- Column 3 -->
+        <div class="col-12 col-md-4 col-lg-3 text-center">
+          <div class="position-relative d-inline-block">
+            <video class="img-fluid" src="./assets/mp4/Scream_s0_least_rel_attn2_pick10_step1_gaussian_crispy_channel_cut0.2_l2_r2_v30_i0.mp4" autoplay controls muted loop playsinline></video>
+            <img src="./assets/img/500px-Scream.jpg" class="position-absolute top-0 end-0 m-2" style="width: 60px; z-index: 5;">
+          </div>
+          <div class="text-center h4 pt-3"><a class="text-decoration-none" href="https://en.wikipedia.org/wiki/The_Scream#/media/File:Edvard_Munch,_1893,_The_Scream,_oil,_tempera_and_pastel_on_cardboard,_91_x_73_cm,_National_Gallery_of_Norway.jpg">“The Scream by Munch”</a></div>
+        </div>
+    </div>
+      <div class="text-center h4 pt-3">
+	    <span class="fw-bold">Vid. 1</span>
+	    <span class="ms-1">PASTEL stylization trajectories painted by Latent Painter</span>
+	  </div>
+    <h2>Trails of Emphasis</h2>
+    <p class="col-12">
+      At the end of each diffusion iteration, the model produces a partially denoised latent. Under PASTEL, subsequent iterations apply different attention emphasis to further steer the generation. Instead, we optionally complete the remaining diffusion steps while freezing the current attention state. This produces a sequence of fully denoised latents, each representing the outcome that would be obtained if no further emphasis were introduced beyond that intermediate state. Using Latent Painter to translate these latents into painting actions, we visualize the evolving trajectories of attention emphasis, providing both an interpretable view of how stylization accumulates over time and an analogy to the step-by-step decision-making process of a human painter, as shown in Vid. 1.
+    </p>	  
+  </div>
+</div>
+</div>
+
 
 <div class="content">
 <div class="row py-3">
