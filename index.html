@@ -229,12 +229,26 @@
     <h2>Interacting with the Starry Nights</h2>
     <div class="col-12 text-center">
       <div class="text-center">
-        <video autoplay loop muted playsinline width="100%">
-          <source src="assets/mp4/zoom_recording.webm" type="video/webm">
+        <video autoplay loop muted controls playsinline width="100%">
+          <source src="./assets/mp4/zoom_recording.webm" type="video/webm">
           Your browser does not support the video tag.
         </video>
 	  </div>
     </div>
+  </div>
+</div>
+</div>
+
+<div class="content">
+<div class="row py-3">
+  <div class="container pt-5 my-5">
+    <h2>Comparison with Prior Work</h2>
+    <p class="col-12">
+      PASTEL extends the concept of attention modulation introduced by AttnMod. While AttnMod typically focuses on modulating a single arbitrary attention block while keeping others at default levels, PASTEL adopts a more holistic approach. In AttnMod, the text prompt continues to condition all non-modulated blocks throughout the entire process.
+    </p>	  
+    <p class="col-12">
+      In contrast, PASTEL enables the simultaneous modulation of all attention blocks—or specific subsets defined as presets—throughout the denoising iterations. By utilizing these structured presets to keep the experimental space trackable, PASTEL’s comprehensive attention modulation fosters greater creativity and stylistic diversity in the final output.
+    </p>	  
   </div>
 </div>
 </div>
