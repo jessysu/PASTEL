@@ -86,6 +86,44 @@
 
 <div class="content">
 <div class="row py-3">
+  <div class="container my-5">
+    <div class="col-12 text-center">
+      <img class="img-fluid" src="./assets/img/Fig3_small.jpg"></img>
+      <div class="text-center h4 pt-3">
+	    <span class="fw-bold">Fig. 3</span>
+	    <span class="ms-1">
+          Concept stylization from seed 0. Rows represent [&pi;, B] configurations: 
+          [&pi;<span class="fst-italic"><sub>most</sub></span>, B<span class="fst-italic"><sub>all</sub></span>], 
+          [&pi;<span class="fst-italic"><sub>least</sub></span>, B<span class="fst-italic"><sub>all</sub></span>], and 
+          [&pi;<span class="fst-italic"><sub>least</sub></span>, B<span class="fst-italic"><sub>attn2</sub></span>]. 
+          Grid columns: s &in; {0.2, 0.5, 1, 1.25}; grid rows: k &in; {2, 3}. 
+		</span>
+	  </div>
+    </div>
+    <h2>Navigating the Style Space</h2>
+    <p class="col-12">
+      A PASTEL <span class="fst-italic">configuration</span> comprises the tuple [&pi;, B, s, k]. We frame these parameters as control axes for creative discovery:
+    </p>
+    <ul class="col-12">
+      <li class="pb-2">
+        <strong>Policy (&pi;):</strong> Sets the creative direction. <span class="fst-italic">Abs</span> modes prioritize semantic fidelity, while <span class="fst-italic">rel</span> modes favor expressive, abstract deviations. Yet <span class="fst-italic">most</span>-influential ranking encourages high compositional richness whereas <span class="fst-italic">least</span>-influential promotes consistency and stability.
+      </li>
+      <li class="pb-2">
+        <strong>Preset (B):</strong> Defines stylistic scope, by isolating interventions to spatial domains—targeting global structural coherence (encoder blocks) or fine-grained textural detail (decoder blocks).
+      </li>
+      <li class="pb-2">
+        <strong>Intensity (s, k):</strong> Governs intervention pace. Lower values preserve abstraction, while higher values accelerate prompt alignment. Aggressive settings (e.g., larger s or more k) can cause summed attention to exceed 1.0, triggering "over-saturation," a regime where attention spikes reveal volatile, novel aesthetic forms.
+      </li>
+    </ul>
+    <p class="col-12">
+      By varying these parameters, we transform the diffusion process from a "black box" into a structured, traversable landscape of aesthetic possibilities.
+    </p>	  
+  </div>
+</div>
+</div>
+
+<div class="content">
+<div class="row py-3">
   <div class="container pt-5 my-5">
     <div class="d-md-flex justify-content-evenly">
         <!-- Column 1 -->
@@ -244,7 +282,7 @@
   <div class="container my-5">
     <h2>Comparison with Prior Work</h2>
     <p class="col-12">
-      PASTEL extends the concept of attention modulation introduced by AttnMod. While AttnMod typically focuses on modulating a single arbitrary attention block while keeping others at default levels, PASTEL adopts a more holistic approach. In AttnMod, the text prompt continues to condition all non-modulated blocks throughout the entire process.
+      PASTEL extends the concept of attention modulation introduced by <a href="https://attnmod.github.io/">AttnMod</a>. While AttnMod typically focuses on modulating a single arbitrary attention block while keeping others at default levels, PASTEL adopts a more holistic approach. In AttnMod, the text prompt continues to condition all non-modulated blocks throughout the entire process.
     </p>	  
     <p class="col-12">
       In contrast, PASTEL enables the simultaneous modulation of all attention blocks—or specific subsets defined as presets—throughout the denoising iterations. By utilizing these structured presets to keep the experimental space trackable, PASTEL’s comprehensive attention modulation fosters greater creativity and stylistic diversity in the final output.
