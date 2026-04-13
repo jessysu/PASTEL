@@ -85,3 +85,12 @@ p {
   width: 3rem;
   height: 3rem;
 }
+
+
+/* Ensure the wall images are uniform */
+.thumbnail-item img {
+  transition: transform 0.2s ease;
+}
+.thumbnail-item img:hover {
+  filter: brightness(0.8);
+}
