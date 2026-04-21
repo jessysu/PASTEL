@@ -65,6 +65,21 @@ const playBtn = document.getElementById('playBtn');
 let thumbnailFiles = [];
 let videoFiles = [];
 
+const promptMapping = {
+  "ASK": "Avenue in Schloss Kammer Park by Klimt",
+  "CC": "Church in Cassone by Klimt",
+  "CTN": "Cafe Terrace at Night by Van Gogh",
+  "FHWA": "Forester's House in Weissenbach on the Attersee by Klimt",
+  "GWK": "The Great Wave off Kanagawa",
+  "I": "Irises by Van Gogh",
+  "Kiss": "The Kiss by Klimt",
+  "LF": "Lady with a Fan by Klimt",
+  "PAB": "Portrait of Adele Bloch-Bauer I by Klimt",
+  "SN": "Starry Night by van Gogh",
+  "SW": "Schloss by the Water by Klimt",
+  "WFC": "Wheat Field with Cypresses by Van Gogh"
+};
+
 // --- 1. CORE SYNC LOGIC (The bottom players) ---
 
 function getMaxVideos() {
@@ -136,26 +151,32 @@ function toggleVideo(imgElement, index) {
   if (isSameVideo) return;
 
   imgElement.classList.add('ring-active');
+  
   const itemsPerRow = getItemsPerRow();
-  const allThumbnails = document.querySelectorAll('.thumbnail-item');
+  
+  // FIX: Look for thumbnails ONLY within the same group row
+  const parentGroup = imgElement.closest('.thumbnail-group');
+  const allThumbnailsInGroup = parentGroup.querySelectorAll('.thumbnail-item');
+  
   const currentRow = Math.floor(index / itemsPerRow);
-  const lastItemIndex = Math.min((currentRow + 1) * itemsPerRow - 1, allThumbnails.length - 1);
-  const insertionPoint = allThumbnails[lastItemIndex];
+  const lastItemIndex = Math.min((currentRow + 1) * itemsPerRow - 1, allThumbnailsInGroup.length - 1);
+  const insertionPoint = allThumbnailsInGroup[lastItemIndex];
 
   const playerHtml = `
-    <div id="dynamic-player-row" class="col-12 py-3" data-active-src="${videoSrc}" style="position: relative; z-index: 10;">
+    <div id="dynamic-player-row" class="col-12 py-3 fade-in" data-active-src="${videoSrc}" style="position: relative; z-index: 10;">
       <div class="card bg-dark text-white border-primary shadow">
         <div class="card-header d-flex justify-content-between align-items-center border-secondary">
             <small class="text-truncate">${videoSrc.split('/').pop()}</small>
             <button type="button" class="btn-close btn-close-white" id="closeVideoBtn"></button>
         </div>
         <div class="card-body p-0 bg-black text-center">
-            <video src="${videoSrc}" controls autoplay loop style="max-height:500px; width:auto; max-width:100%;"></video>
+            <video src="${videoSrc}" controls autoplay loop preload="auto" style="max-height:500px; width:auto; max-width:100%;"></video>
         </div>
       </div>
     </div>`;
 
   insertionPoint.insertAdjacentHTML('afterend', playerHtml);
+  
   document.getElementById('closeVideoBtn').onclick = () => {
     document.getElementById('dynamic-player-row').remove();
     imgElement.classList.remove('ring-active');
@@ -182,27 +203,82 @@ function renderWall() {
   const imageWall = document.getElementById('imageWall');
   imageWall.innerHTML = ''; 
 
+  let currentPrefix = "";
+  let currentGroupContainer = null;
+
   thumbnailFiles.forEach((file, index) => {
+    const prefix = file.split('_')[0];
+
+    // 1. If prefix changes, create a new Section
+    if (prefix !== currentPrefix) {
+      currentPrefix = prefix;
+      
+      // Check if we have a mapped prompt
+      const mappedPrompt = promptMapping[currentPrefix];
+      let headerContent;
+
+      if (mappedPrompt) {
+        // If found: Apply double quotes and italics
+        headerContent = `<strong>"<em>${mappedPrompt}</em>"</strong>`;
+      } else {
+        // If NOT found: Just print the raw prefix (no quotes, no italics)
+        headerContent = `<strong>${currentPrefix}</strong>`;
+      }
+      
+      const headerHtml = `
+        <div class="col-12 mt-5 mb-2">
+          <h2 class="border-bottom pb-2 text-primary">
+            ${headerContent}
+          </h2>
+        </div>`;
+      imageWall.insertAdjacentHTML('beforeend', headerHtml);
+
+      // Create a dedicated inner row for this group's thumbnails
+      const groupRowId = `group-${currentPrefix}`;
+      const groupRowHtml = `<div class="row g-2 thumbnail-group" id="${groupRowId}"></div>`;
+      imageWall.insertAdjacentHTML('beforeend', groupRowHtml);
+      currentGroupContainer = document.getElementById(groupRowId);
+    }
+
+    // 2. Render Thumbnail into the specific group container
+    const isDefault = file.toLowerCase().includes('_default_');
+    const badgeHtml = isDefault ? '<span class="badge bg-secondary position-absolute top-0 start-0 m-2" style="z-index:2;">Default</span>' : '';
+
     const videoSrc = findVideoMatch(file);
     const html = `
-      <div class="col-6 col-md-4 col-lg-2 thumbnail-item">
-        <img src="./assets/mp4/${file}" class="img-thumbnail selectable-video w-100" 
-             data-src="${videoSrc}" loading="lazy" style="aspect-ratio:1/1; object-fit:cover; cursor:pointer;">
+      <div class="col-6 col-md-4 col-lg-2 thumbnail-item mb-3 position-relative">
+        ${badgeHtml}
+        <img src="./assets/mp4/${file}" 
+             class="img-thumbnail selectable-video w-100" 
+             data-src="${videoSrc}" 
+             loading="lazy" 
+             style="aspect-ratio:1/1; object-fit:cover; cursor:pointer;">
       </div>`;
-    imageWall.insertAdjacentHTML('beforeend', html);
+    
+    currentGroupContainer.insertAdjacentHTML('beforeend', html);
   });
 
-  document.querySelectorAll('.selectable-video').forEach((img, idx) => {
-    img.onclick = () => {
-      toggleVideo(img, idx);
-      handleSyncSelection(img); 
+  // 3. Re-bind click events
+  document.querySelectorAll('.selectable-video').forEach((img) => {
+    img.onclick = function() {
+      const groupItems = Array.from(this.closest('.thumbnail-group').querySelectorAll('.thumbnail-item'));
+      const itemIndex = groupItems.indexOf(this.closest('.thumbnail-item'));
+      
+      toggleVideo(this, itemIndex);
+      handleSyncSelection(this); 
     };
   });
 }
 
 function findVideoMatch(thumbName) {
+  const defaultVideoName = thumbName.replace(".jpg", ".mp4");
+  if (videoFiles.includes(defaultVideoName)) {
+    return `./assets/mp4/${defaultVideoName}`;
+  }
+
   const coreName = thumbName.replace(/_w_otheron|_w_attn1on|_cap1\.jpg/g, "");
   const match = videoFiles.find(v => v.includes(coreName));
+  
   return match ? `./assets/mp4/${match}` : "";
 }
 

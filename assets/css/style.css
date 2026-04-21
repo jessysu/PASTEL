@@ -94,3 +94,39 @@ p {
 .thumbnail-item img:hover {
   filter: brightness(0.8);
 }
+
+.image-wall h2 {
+  width: 100%;
+}
+
+.selectable-video.ring-active {
+  border: 4px solid #0d6efd !important; 
+  transform: scale(0.95);
+  transition: all 0.2s ease;
+  box-shadow: 0 0 15px rgba(13, 110, 253, 0.5);
+  position: relative;
+  z-index: 5;
+}
+
+.thumbnail-item {
+    /* Ensures the grid remains stable during insertion */
+    display: flex; 
+    flex-direction: column;
+}
+
+#dynamic-player-row {
+    /* Forces the row to span the full width and clear floats */
+    width: 100%;
+    clear: both;
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease-in-out;
+    /* Keeps the state at the end of the animation */
+    animation-fill-mode: forwards; 
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
