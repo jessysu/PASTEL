@@ -37,6 +37,7 @@
 
 <div class="content">
 <div class="row py-3">
+  <h1 class="text-center my-5"><strong>Synchronized Player</strong></h1>
   <div class="row mb-3" id="videoRow">
     <div id="col-v1" class="col-12 col-md-6 col-lg-4"><video id="v1" class="w-100 sync-video" muted></video></div>
     <div id="col-v2" class="col-12 col-md-6 col-lg-4 d-none d-md-block"><video id="v2" class="w-100 sync-video" muted></video></div>
@@ -114,6 +115,31 @@ Preset: ${presetDesc}
 Emphasizing ${pick} attention blocks by ${step} per loop`;
 }
 
+function parseAnimationDetails(filename) {
+  const parts = filename.split('_');
+  const stepIndex = parts.findIndex(p => p.startsWith('step'));
+  const animParts = parts.slice(stepIndex + 1);
+
+  const strokePart = animParts.find(p => p === 'gaussian' || p === 'circle');
+  const strokeShape = strokePart === 'circle' ? 'Sharp' : 'Feathered';
+  
+  const latentPart = animParts.find(p => p.startsWith('l')) || '';
+  const latentCount = latentPart ? latentPart.replace('l', '') : '5';
+  
+  const roundPart = animParts.find(p => p.startsWith('r')) || '';
+  const rounds = roundPart ? roundPart.replace('r', '') : '1';
+
+  const videoPart = animParts.find(p => p.startsWith('v')) || '';
+  const duration = videoPart.replace('v', '') || '30';
+
+  const crispyDesc = "Painting driven by max info-gain channel with frozen attention.";
+
+  return {
+    summary: `Stroke: ${strokeShape} | Latents: ${latentCount} | Rounds per latent: ${rounds} | Duration: ${duration}s`,
+    description: crispyDesc
+  };
+}
+
 // --- 1. CORE SYNC LOGIC (The bottom players) ---
 
 function getMaxVideos() {
@@ -178,6 +204,8 @@ function toggleVideo(imgElement, index) {
   const videoSrc = imgElement.dataset.src;
   const existingPlayer = document.getElementById('dynamic-player-row');
   const isSameVideo = existingPlayer && existingPlayer.getAttribute('data-active-src') === videoSrc;
+  const fileName = videoSrc.split('/').pop();
+  const animData = parseAnimationDetails(fileName);
 
   if (existingPlayer) existingPlayer.remove();
   document.querySelectorAll('.selectable-video').forEach(el => el.classList.remove('ring-active'));
@@ -197,14 +225,20 @@ function toggleVideo(imgElement, index) {
   const insertionPoint = allThumbnailsInGroup[lastItemIndex];
 
   const playerHtml = `
-    <div id="dynamic-player-row" class="col-12 py-3 fade-in" data-active-src="${videoSrc}" style="position: relative; z-index: 10;">
+    <div id="dynamic-player-row" class="col-12 py-3" data-active-src="${videoSrc}">
       <div class="card bg-dark text-white border-primary shadow">
-        <div class="card-header d-flex justify-content-between align-items-center border-secondary">
-            <small class="text-truncate">${videoSrc.split('/').pop()}</small>
-            <button type="button" class="btn-close btn-close-white" id="closeVideoBtn"></button>
+        <div class="card-header border-secondary bg-dark">
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <div class="d-flex flex-column">
+                    <span class="text-info fw-bold" style="font-size: 0.95rem;">${animData.summary}</span>
+                    <small class="text-info mt-1" style="font-size: 0.75rem;"><em>${animData.description}</em></small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" id="closeVideoBtn"></button>
+            </div>
+            <hr class="my-2 opacity-25">
         </div>
         <div class="card-body p-0 bg-black text-center">
-            <video src="${videoSrc}" controls autoplay loop preload="auto" style="max-height:500px; width:auto; max-width:100%;"></video>
+            <video src="${videoSrc}" controls autoplay loop muted style="max-height:500px; width:auto; max-width:100%;"></video>
         </div>
       </div>
     </div>`;
@@ -283,15 +317,27 @@ function renderWall() {
     currentGroupContainer.insertAdjacentHTML('beforeend', html);
   });
 
-  // Re-bind click events
-  document.querySelectorAll('.selectable-video').forEach((img) => {
+  // 3. Re-bind click events
+  const allThumbnails = document.querySelectorAll('.selectable-video');
+  
+  allThumbnails.forEach((img) => {
     img.onclick = function() {
       const groupItems = Array.from(this.closest('.thumbnail-group').querySelectorAll('.thumbnail-item'));
       const itemIndex = groupItems.indexOf(this.closest('.thumbnail-item'));
+      
       toggleVideo(this, itemIndex);
       handleSyncSelection(this); 
     };
   });
+
+  // 4. Auto-pop the first thumbnail
+  if (allThumbnails.length > 0) {
+    const firstImg = allThumbnails[0];
+    // Small delay ensures the grid layout is stable before triggering the expansion
+    setTimeout(() => {
+      firstImg.click();
+    }, 150);
+  }
 }
 
 function findVideoMatch(thumbName) {
