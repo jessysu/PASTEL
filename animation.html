@@ -65,19 +65,54 @@ let thumbnailFiles = [];
 let videoFiles = [];
 
 const promptMapping = {
-  "ASK": "Avenue in Schloss Kammer Park by Klimt",
-  "CC": "Church in Cassone by Klimt",
-  "CTN": "Cafe Terrace at Night by Van Gogh",
-  "FHWA": "Forester's House in Weissenbach on the Attersee by Klimt",
+  "ASK": "Avenue in Schloss Kammer Park by Gustav Klimt",
+  "CC": "Church in Cassone by Gustav Klimt",
+  "CTN": "Cafe Terrace at Night by Vincent van Gogh",
+  "FHWA": "Forester's House in Weissenbach on the Attersee by Gustav Klimt",
   "GWK": "The Great Wave off Kanagawa",
-  "I": "Irises by Van Gogh",
-  "Kiss": "The Kiss by Klimt",
-  "LF": "Lady with a Fan by Klimt",
-  "PAB": "Portrait of Adele Bloch-Bauer I by Klimt",
-  "SN": "Starry Night by van Gogh",
-  "SW": "Schloss by the Water by Klimt",
-  "WFC": "Wheat Field with Cypresses by Van Gogh"
+  "I": "Irises by Vincent van Gogh",
+  "Kiss": "The Kiss by Gustav Klimt",
+  "LF": "Lady with a Fan by Gustav Klimt",
+  "PAB": "Portrait of Adele Bloch-Bauer I by Gustav Klimt",
+  "SN": "Starry Night by Vincent van Gogh",
+  "SW": "Schloss by the Water by Gustav Klimt",
+  "WFC": "Wheat Field with Cypresses by Vincent van Gogh"
 };
+
+function parseParameters(filename) {
+  if (filename.toLowerCase().includes('_default_')) return "Default Generation";
+
+  const parts = filename.split('_');
+  const seed = parts[1]?.replace('s', '') || 'N/A';
+  const pi1 = parts[2] || 'N/A';
+  const pi2 = parts[3] === 'abs' ? 'absolute deviation' : 'directional influence';
+  
+  const pickIndex = parts.findIndex(p => p.startsWith('pick'));
+  const rawPreset = parts.slice(4, pickIndex).join('_');
+  
+  // Mapping technical presets to architectural descriptions
+  let presetDesc = "";
+  if (rawPreset === "all") {
+    presetDesc = "all attention blocks tunable";
+  } else if (rawPreset === "attn2_w_attn1on") {
+    presetDesc = "cross-attn tunable; self-attn static";
+  } else if (rawPreset === "down_w_otheron") {
+    presetDesc = "encoder blocks tunable; others static";
+  } else if (rawPreset === "up_w_otheron") {
+    presetDesc = "decoder blocks tunable; others static";
+  } else {
+    presetDesc = rawPreset.replace('_w_', ' with ');
+  }
+
+  const pick = parts[pickIndex]?.replace('pick', '') || 'N/A';
+  const step = parts[pickIndex + 1]?.replace('step', '') || 'N/A';
+
+  return `Seed: ${seed}
+Policy 1: ${pi1} information gain
+Policy 2: aggregated on ${pi2}
+Preset: ${presetDesc}
+Emphasizing ${pick} attention blocks by ${step} per loop`;
+}
 
 // --- 1. CORE SYNC LOGIC (The bottom players) ---
 
@@ -208,40 +243,30 @@ function renderWall() {
   thumbnailFiles.forEach((file, index) => {
     const prefix = file.split('_')[0];
 
-    // 1. If prefix changes, create a new Section
     if (prefix !== currentPrefix) {
       currentPrefix = prefix;
-      
-      // Check if we have a mapped prompt
       const mappedPrompt = promptMapping[currentPrefix];
-      let headerContent;
-
-      if (mappedPrompt) {
-        // If found: Apply double quotes and italics
-        headerContent = `<strong>"<em>${mappedPrompt}</em>"</strong>`;
-      } else {
-        // If NOT found: Just print the raw prefix (no quotes, no italics)
-        headerContent = `<strong>${currentPrefix}</strong>`;
-      }
+      let headerContent = mappedPrompt 
+        ? `<strong>"<em>${mappedPrompt}</em>"</strong>` 
+        : `<strong>${currentPrefix}</strong>`;
       
       const headerHtml = `
         <div class="col-12 mt-5 mb-2">
-          <h2 class="border-bottom pb-2 text-primary">
-            ${headerContent}
-          </h2>
+          <h2 class="border-bottom pb-2 text-primary">${headerContent}</h2>
         </div>`;
       imageWall.insertAdjacentHTML('beforeend', headerHtml);
 
-      // Create a dedicated inner row for this group's thumbnails
       const groupRowId = `group-${currentPrefix}`;
-      const groupRowHtml = `<div class="row g-2 thumbnail-group" id="${groupRowId}"></div>`;
-      imageWall.insertAdjacentHTML('beforeend', groupRowHtml);
+      imageWall.insertAdjacentHTML('beforeend', `<div class="row g-2 thumbnail-group" id="${groupRowId}"></div>`);
       currentGroupContainer = document.getElementById(groupRowId);
     }
 
-    // 2. Render Thumbnail into the specific group container
     const isDefault = file.toLowerCase().includes('_default_');
     const badgeHtml = isDefault ? '<span class="badge bg-secondary position-absolute top-0 start-0 m-2" style="z-index:2;">Default</span>' : '';
+
+    // Generate the hover text
+    // If it's a "default" file, we can show a simpler message
+    const hoverInfo = isDefault ? "Default Generation" : parseParameters(file);
 
     const videoSrc = findVideoMatch(file);
     const html = `
@@ -250,6 +275,7 @@ function renderWall() {
         <img src="./assets/mp4/${file}" 
              class="img-thumbnail selectable-video w-100" 
              data-src="${videoSrc}" 
+             title="${hoverInfo}"
              loading="lazy" 
              style="aspect-ratio:1/1; object-fit:cover; cursor:pointer;">
       </div>`;
@@ -257,12 +283,11 @@ function renderWall() {
     currentGroupContainer.insertAdjacentHTML('beforeend', html);
   });
 
-  // 3. Re-bind click events
+  // Re-bind click events
   document.querySelectorAll('.selectable-video').forEach((img) => {
     img.onclick = function() {
       const groupItems = Array.from(this.closest('.thumbnail-group').querySelectorAll('.thumbnail-item'));
       const itemIndex = groupItems.indexOf(this.closest('.thumbnail-item'));
-      
       toggleVideo(this, itemIndex);
       handleSyncSelection(this); 
     };
