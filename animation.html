@@ -256,7 +256,7 @@ function toggleVideo(imgElement, index) {
 
 async function loadGallery() {
   try {
-    const response = await fetch('./assets/mp4/files.txt');
+    const response = await fetch('./assets/mp4/files_ex.txt');
     const text = await response.text();
     const allFiles = text.split(/\r?\n/).map(line => line.trim()).filter(line => line && !line.startsWith('#'));
 
@@ -331,8 +331,8 @@ function renderWall() {
   });
 
   // 4. Auto-pop the first thumbnail
-  if (allThumbnails.length > 0) {
-    const firstImg = allThumbnails[0];
+  if (allThumbnails.length > 1) {
+    const firstImg = allThumbnails[1];
     // Small delay ensures the grid layout is stable before triggering the expansion
     setTimeout(() => {
       firstImg.click();

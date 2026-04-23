@@ -1,0 +1,377 @@
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"> 
+<title>PASTEL</title>
+
+<meta property="og:title" content="PASTEL"/>
+<meta property="og:type" content="article"/>
+<meta property="og:description" content=" Progressive Attention-driven Stylization Through Evolving Latents"/>
+<meta property="og:image" content="./assets/img/favimage.png"/>
+
+<link rel="stylesheet" href="./assets/css/bulma.min.css">
+<link rel="stylesheet" href="./assets/css/bulma-carousel.min.css">
+<link rel="stylesheet" href="./assets/css/bulma-slider.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.2/css/bootstrap.min.css" rel="stylesheet">
+<link href="./assets/css/style.css" rel="stylesheet">
+
+
+<link rel="icon" href="./assets/img/favicon.png">
+<link rel="preload" as="image" href="./assets/img/carousel/SN_s0_least_abs_attn2_w_attn1on_pick5_step0.34_cap1_out.jpg">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+
+</head>
+
+<body>
+<div class="container-fluid my-md-5">
+<div class="content">
+<div class="row py-3" id="videoList">
+  <h1 class="text-center my-5"><strong>PASTEL Latent Painting</strong></h1>
+  <div class="row g-2 mb-4" id="imageWall">
+  </div>
+</div>
+</div>
+
+<div class="content">
+<div class="row py-3">
+  <h1 class="text-center my-5"><strong>Synchronized Player</strong></h1>
+  <div class="row mb-3" id="videoRow">
+    <div id="col-v1" class="col-12 col-md-6 col-lg-4"><video id="v1" class="w-100 sync-video" muted></video></div>
+    <div id="col-v2" class="col-12 col-md-6 col-lg-4 d-none d-md-block"><video id="v2" class="w-100 sync-video" muted></video></div>
+    <div id="col-v3" class="col-12 col-md-6 col-lg-4 d-none d-lg-block"><video id="v3" class="w-100 sync-video" muted></video></div>
+  </div>
+  
+  <div class="row align-items-center">
+    <div class="col-auto">
+      <button class="btn btn-primary" id="playBtn">Play</button>
+    </div>
+    <div class="col">
+      <input type="range" class="form-range" id="syncSlider" value="0" min="0" step="0.1">
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.min.js"></script>
+<script>
+let selectedSrcs = [];
+const videos = [document.getElementById('v1'), document.getElementById('v2'), document.getElementById('v3')];
+const slider = document.getElementById('syncSlider');
+const playBtn = document.getElementById('playBtn');
+let thumbnailFiles = [];
+let videoFiles = [];
+
+const promptMapping = {
+  "ASK": "Avenue in Schloss Kammer Park by Gustav Klimt",
+  "CC": "Church in Cassone by Gustav Klimt",
+  "CTN": "Cafe Terrace at Night by Vincent van Gogh",
+  "FHWA": "Forester's House in Weissenbach on the Attersee by Gustav Klimt",
+  "GWK": "The Great Wave off Kanagawa",
+  "I": "Irises by Vincent van Gogh",
+  "Kiss": "The Kiss by Gustav Klimt",
+  "LF": "Lady with a Fan by Gustav Klimt",
+  "PAB": "Portrait of Adele Bloch-Bauer I by Gustav Klimt",
+  "SN": "Starry Night by Vincent van Gogh",
+  "SW": "Schloss by the Water by Gustav Klimt",
+  "WFC": "Wheat Field with Cypresses by Vincent van Gogh"
+};
+
+function parseParameters(filename) {
+  if (filename.toLowerCase().includes('_default_')) return "Default Generation";
+
+  const parts = filename.split('_');
+  const seed = parts[1]?.replace('s', '') || 'N/A';
+  const pi1 = parts[2] || 'N/A';
+  const pi2 = parts[3] === 'abs' ? 'absolute deviation' : 'directional influence';
+  
+  const pickIndex = parts.findIndex(p => p.startsWith('pick'));
+  const rawPreset = parts.slice(4, pickIndex).join('_');
+  
+  // Mapping technical presets to architectural descriptions
+  let presetDesc = "";
+  if (rawPreset === "all") {
+    presetDesc = "all attention blocks tunable";
+  } else if (rawPreset === "attn2_w_attn1on") {
+    presetDesc = "cross-attn tunable; self-attn static";
+  } else if (rawPreset === "down_w_otheron") {
+    presetDesc = "encoder blocks tunable; others static";
+  } else if (rawPreset === "up_w_otheron") {
+    presetDesc = "decoder blocks tunable; others static";
+  } else {
+    presetDesc = rawPreset.replace('_w_', ' with ');
+  }
+
+  const pick = parts[pickIndex]?.replace('pick', '') || 'N/A';
+  const step = parts[pickIndex + 1]?.replace('step', '') || 'N/A';
+
+  return `Seed: ${seed}
+Policy 1: ${pi1} information gain
+Policy 2: aggregated on ${pi2}
+Preset: ${presetDesc}
+Emphasizing ${pick} attention blocks by ${step} per loop`;
+}
+
+function parseAnimationDetails(filename) {
+  const parts = filename.split('_');
+  const stepIndex = parts.findIndex(p => p.startsWith('step'));
+  const animParts = parts.slice(stepIndex + 1);
+
+  const strokePart = animParts.find(p => p === 'gaussian' || p === 'circle');
+  const strokeShape = strokePart === 'circle' ? 'Sharp' : 'Feathered';
+  
+  const latentPart = animParts.find(p => p.startsWith('l')) || '';
+  const latentCount = latentPart ? latentPart.replace('l', '') : '5';
+  
+  const roundPart = animParts.find(p => p.startsWith('r')) || '';
+  const rounds = roundPart ? roundPart.replace('r', '') : '1';
+
+  const videoPart = animParts.find(p => p.startsWith('v')) || '';
+  const duration = videoPart.replace('v', '') || '30';
+
+  const crispyDesc = "Painting driven by max info-gain channel with frozen attention.";
+
+  return {
+    summary: `Stroke: ${strokeShape} | Latents: ${latentCount} | Rounds per latent: ${rounds} | Duration: ${duration}s`,
+    description: crispyDesc
+  };
+}
+
+// --- 1. CORE SYNC LOGIC (The bottom players) ---
+
+function getMaxVideos() {
+  const width = window.innerWidth;
+  if (width >= 992) return 3; // lg
+  if (width >= 768) return 2; // md
+  return 1;                   // sm
+}
+
+function handleSyncSelection(img) {
+  const videoSrc = img.dataset.src;
+  if (!videoSrc || selectedSrcs.includes(videoSrc)) return;
+
+  // Pause and reset button
+  videos.forEach(v => v.pause());
+  playBtn.innerText = "Play";
+
+  selectedSrcs.push(videoSrc);
+  img.classList.add('border-primary', 'border-4');
+
+  // If we exceed current capacity, shift out the oldest
+  if (selectedSrcs.length > getMaxVideos()) {
+    const removedSrc = selectedSrcs.shift();
+    const oldImg = document.querySelector(`.selectable-video[data-src="${removedSrc}"]`);
+    if (oldImg) oldImg.classList.remove('border-primary', 'border-4');
+  }
+
+  refreshGalleryUI();
+}
+
+function refreshGalleryUI() {
+  const max = getMaxVideos();
+  while (selectedSrcs.length > max) {
+    const removed = selectedSrcs.shift();
+    const oldImg = document.querySelector(`.selectable-video[data-src="${removed}"]`);
+    if (oldImg) oldImg.classList.remove('border-primary', 'border-4');
+  }
+
+  videos.forEach((v, index) => {
+    if (selectedSrcs[index]) {
+      if (v.src !== selectedSrcs[index]) {
+        v.src = selectedSrcs[index];
+        v.load();
+      }
+    } else {
+      v.removeAttribute('src');
+      v.load();
+    }
+  });
+}
+
+// --- 2. EXPANSION LOGIC (The image wall toggle) ---
+
+function getItemsPerRow() {
+  const width = window.innerWidth;
+  if (width >= 992) return 6; 
+  if (width >= 768) return 3; 
+  return 2;                   
+}
+
+function toggleVideo(imgElement, index) {
+  const videoSrc = imgElement.dataset.src;
+  const existingPlayer = document.getElementById('dynamic-player-row');
+  const isSameVideo = existingPlayer && existingPlayer.getAttribute('data-active-src') === videoSrc;
+  const fileName = videoSrc.split('/').pop();
+  const animData = parseAnimationDetails(fileName);
+
+  if (existingPlayer) existingPlayer.remove();
+  document.querySelectorAll('.selectable-video').forEach(el => el.classList.remove('ring-active'));
+
+  if (isSameVideo) return;
+
+  imgElement.classList.add('ring-active');
+  
+  const itemsPerRow = getItemsPerRow();
+  
+  // FIX: Look for thumbnails ONLY within the same group row
+  const parentGroup = imgElement.closest('.thumbnail-group');
+  const allThumbnailsInGroup = parentGroup.querySelectorAll('.thumbnail-item');
+  
+  const currentRow = Math.floor(index / itemsPerRow);
+  const lastItemIndex = Math.min((currentRow + 1) * itemsPerRow - 1, allThumbnailsInGroup.length - 1);
+  const insertionPoint = allThumbnailsInGroup[lastItemIndex];
+
+  const playerHtml = `
+    <div id="dynamic-player-row" class="col-12 py-3" data-active-src="${videoSrc}">
+      <div class="card bg-dark text-white border-primary shadow">
+        <div class="card-header border-secondary bg-dark">
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <div class="d-flex flex-column">
+                    <span class="text-info fw-bold" style="font-size: 0.95rem;">${animData.summary}</span>
+                    <small class="text-info mt-1" style="font-size: 0.75rem;"><em>${animData.description}</em></small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" id="closeVideoBtn"></button>
+            </div>
+            <hr class="my-2 opacity-25">
+        </div>
+        <div class="card-body p-0 bg-black text-center">
+            <video src="${videoSrc}" controls autoplay loop muted style="max-height:500px; width:auto; max-width:100%;"></video>
+        </div>
+      </div>
+    </div>`;
+
+  insertionPoint.insertAdjacentHTML('afterend', playerHtml);
+  
+  document.getElementById('closeVideoBtn').onclick = () => {
+    document.getElementById('dynamic-player-row').remove();
+    imgElement.classList.remove('ring-active');
+  };
+}
+
+
+// --- 3. DATA LOADING & RENDERING ---
+
+async function loadGallery() {
+  try {
+    const response = await fetch('./assets/mp4/files_sn.txt');
+    const text = await response.text();
+    const allFiles = text.split(/\r?\n/).map(line => line.trim()).filter(line => line && !line.startsWith('#'));
+
+    thumbnailFiles = allFiles.filter(f => f.toLowerCase().endsWith('.jpg'));
+    videoFiles = allFiles.filter(f => f.toLowerCase().endsWith('.mp4'));
+
+    renderWall();
+  } catch (err) { console.error("Load failed:", err); }
+}
+
+function renderWall() {
+  const imageWall = document.getElementById('imageWall');
+  imageWall.innerHTML = ''; 
+
+  let currentPrefix = "";
+  let currentGroupContainer = null;
+
+  thumbnailFiles.forEach((file, index) => {
+    const prefix = file.split('_')[0];
+
+    if (prefix !== currentPrefix) {
+      currentPrefix = prefix;
+      const mappedPrompt = promptMapping[currentPrefix];
+      let headerContent = mappedPrompt 
+        ? `<strong>"<em>${mappedPrompt}</em>"</strong>` 
+        : `<strong>${currentPrefix}</strong>`;
+      
+      const headerHtml = `
+        <div class="col-12 mt-5 mb-2">
+          <h2 class="border-bottom pb-2 text-primary">${headerContent}</h2>
+        </div>`;
+      imageWall.insertAdjacentHTML('beforeend', headerHtml);
+
+      const groupRowId = `group-${currentPrefix}`;
+      imageWall.insertAdjacentHTML('beforeend', `<div class="row g-2 thumbnail-group" id="${groupRowId}"></div>`);
+      currentGroupContainer = document.getElementById(groupRowId);
+    }
+
+    const isDefault = file.toLowerCase().includes('_default_');
+    const badgeHtml = isDefault ? '<span class="badge bg-secondary position-absolute top-0 start-0 m-2" style="z-index:2;">Default</span>' : '';
+
+    // Generate the hover text
+    // If it's a "default" file, we can show a simpler message
+    const hoverInfo = isDefault ? "Default Generation" : parseParameters(file);
+
+    const videoSrc = findVideoMatch(file);
+    const html = `
+      <div class="col-6 col-md-4 col-lg-2 thumbnail-item mb-3 position-relative">
+        ${badgeHtml}
+        <img src="./assets/mp4/${file}" 
+             class="img-thumbnail selectable-video w-100" 
+             data-src="${videoSrc}" 
+             title="${hoverInfo}"
+             loading="lazy" 
+             style="aspect-ratio:1/1; object-fit:cover; cursor:pointer;">
+      </div>`;
+    
+    currentGroupContainer.insertAdjacentHTML('beforeend', html);
+  });
+
+  // 3. Re-bind click events
+  const allThumbnails = document.querySelectorAll('.selectable-video');
+  
+  allThumbnails.forEach((img) => {
+    img.onclick = function() {
+      const groupItems = Array.from(this.closest('.thumbnail-group').querySelectorAll('.thumbnail-item'));
+      const itemIndex = groupItems.indexOf(this.closest('.thumbnail-item'));
+      
+      toggleVideo(this, itemIndex);
+      handleSyncSelection(this); 
+    };
+  });
+
+  // 4. Auto-pop the first thumbnail
+  if (allThumbnails.length > 2) {
+    const firstImg = allThumbnails[2];
+    // Small delay ensures the grid layout is stable before triggering the expansion
+    setTimeout(() => {
+      firstImg.click();
+    }, 150);
+  }
+}
+
+function findVideoMatch(thumbName) {
+  const defaultVideoName = thumbName.replace(".jpg", ".mp4");
+  if (videoFiles.includes(defaultVideoName)) {
+    return `./assets/mp4/${defaultVideoName}`;
+  }
+
+  const coreName = thumbName.replace(/_w_otheron|_w_attn1on|_cap1\.jpg/g, "");
+  const match = videoFiles.find(v => v.includes(coreName));
+  
+  return match ? `./assets/mp4/${match}` : "";
+}
+
+// --- 4. PLAYER CONTROLS ---
+
+playBtn.onclick = () => {
+  const isPaused = videos[0].paused;
+  let durations = [];
+  videos.forEach(v => {
+    if (v.src) {
+      isPaused ? v.play() : v.pause();
+      if (v.duration) durations.push(v.duration);
+    }
+  });
+  playBtn.innerText = isPaused ? "Pause" : "Play";
+  if (durations.length > 0) slider.max = Math.min(...durations);
+};
+
+slider.oninput = () => { videos.forEach(v => { if(v.src) v.currentTime = slider.value; }); };
+videos[0].ontimeupdate = () => { slider.value = videos[0].currentTime; };
+window.onresize = refreshGalleryUI;
+
+loadGallery();
+</script>
+</body>
+</html>
