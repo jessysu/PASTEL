@@ -132,7 +132,7 @@ function parseAnimationDetails(filename) {
   const videoPart = animParts.find(p => p.startsWith('v')) || '';
   const duration = videoPart.replace('v', '') || '30';
 
-  const crispyDesc = "Painting driven by max info-gain channel with frozen attention.";
+  const crispyDesc = "Crispy painting actions derived from frozen-attention side-branches of the evolving latent.";
 
   return {
     summary: `Stroke: ${strokeShape} | Latents: ${latentCount} | Rounds per latent: ${rounds} | Duration: ${duration}s`,
