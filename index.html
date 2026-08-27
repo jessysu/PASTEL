@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="./assets/css/bulma.min.css">
 <link rel="stylesheet" href="./assets/css/bulma-carousel.min.css">
 <link rel="stylesheet" href="./assets/css/bulma-slider.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.2/css/bootstrap.min.css" rel="stylesheet">
 <link href="./assets/css/style.css" rel="stylesheet">
@@ -30,7 +30,7 @@
 <div class="content">
 <div class="row py-3">
   <h1><strong>PASTEL</strong></h1>
-  <h4 class="text-center my-1"><em>Progressive Stylization through Iterative Attention Emphasis</em></h3>
+  <h4 class="text-center my-1"><em>Progressive Attention-driven Stylization Through Evolving Latents</em></h3>
   <p id="authors" class="py-3">
     <a href="https://www.linkedin.com/in/jessysu/">Shih-Chieh Su</a>
   </p>
@@ -40,9 +40,17 @@
     </div>
   </div>
   <div class="d-md-flex justify-content-evenly">
-    <a href="#" class="btn btn-dark text-light m-1">
-	  <span class="icon me-1"><i class="ai ai-arxiv"></i></span>
+    <a href="./assets/pdf/PASTEL_2026.pdf" class="btn btn-dark text-light m-1">
+	  <span class="icon me-1"><i class="fa fa-file-lines"></i></span>
       <span>Paper</span>
+    </a>
+    <a href="https://www.thecvf-art.com/project.php?year=2026&artist=attnmod&id=1007" class="btn btn-dark text-light m-1">
+	  <span class="icon me-1"><i class="fa fa-palette"></i></span>
+      <span>CVPR Gallery</span>
+    </a>
+    <a href="https://jessysu.github.io/PASTEL/cvpr.html" class="btn btn-dark text-light m-1">
+	  <span class="icon me-1"><i class="fa fa-chalkboard-user"></i></span>
+      <span>Demo</span>
     </a>
     <a href="https://github.com/jessysu/PASTEL/" class="btn btn-dark text-light m-1">
 	  <span class="icon me-1"><i class="fab fa-github"></i></span>
@@ -270,32 +278,6 @@
           <source src="./assets/mp4/zoom_recording.webm" type="video/webm">
           Your browser does not support the video tag.
         </video>
-	  </div>
-    </div>
-  </div>
-</div>
-</div>
-
-<div class="content">
-<div class="row py-3">
-  <div class="container my-5">
-    <h2>Comparison with Prior Work</h2>
-    <p class="col-12">
-      PASTEL extends the concept of attention modulation introduced by <a href="https://attnmod.github.io/">AttnMod</a>. While AttnMod typically focuses on modulating a single arbitrary attention block while keeping others at default levels, PASTEL adopts a more holistic approach. In AttnMod, the text prompt continues to condition all non-modulated blocks throughout the entire process.
-    </p>	  
-    <p class="col-12">
-      In contrast, PASTEL enables the simultaneous modulation of all attention blocks—or specific subsets defined as presets—throughout the denoising iterations. By utilizing these structured presets to keep the experimental space trackable, PASTEL’s comprehensive attention modulation fosters greater creativity and stylistic diversity in the final output.
-    </p>	  
-  </div>
-</div>
-</div>
-
-<div class="content">
-<div class="row py-3">
-  <div class="container pt-5 my-5">
-    <div class="col-12 text-center">
-      <div class="text-center">
-	    <span class="display-1">Coming Up</span>
 	  </div>
     </div>
   </div>
